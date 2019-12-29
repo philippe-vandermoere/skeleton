@@ -1,0 +1,17 @@
+parameters:
+    level: max
+    paths:
+        - src/
+        - tests/
+
+    excludes_analyse:
+        - src/Migrations/
+
+    symfony:
+        container_xml_path: var/cache/test/App_KernelTestDebugContainer.xml
+
+    checkGenericClassInNonGenericObjectType: false
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon

@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd"
+>
+
+    <arg name="basepath" value="."/>
+    <arg name="cache" value=".phpcs-cache"/>
+    <arg name="colors"/>
+    <arg name="report" value="full"/>
+
+    <file>src</file>
+    <file>tests</file>
+
+    <rule ref="PSR12">
+        <exclude name="PSR12.ControlStructures.ControlStructureSpacing"/>
+    </rule>
+
+    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+    <rule ref="Generic.Commenting.Todo"/>
+    <rule ref="Generic.PHP.ForbiddenFunctions">
+        <properties>
+            <property name="forbiddenFunctions" type="array" extend="true">
+                <element key="sizeof" value="count"/>
+                <element key="isset" value="array_key_exists"/>
+                <element key="empty" value="array_key_exists"/>
+                <element key="split" value="explode"/>
+                <element key="delete" value="unset"/>
+                <element key="print" value="echo"/>
+                <element key="create_function" value="null"/>
+                <element key="error_log" value="null"/>
+                <element key="print_r" value="null"/>
+                <element key="var_dump" value="null"/>
+                <element key="dump" value="null"/>
+                <element key="dd" value="null"/>
+                <element key="die" value="null"/>
+                <element key="exit" value="null"/>
+            </property>
+        </properties>
+    </rule>
+    <rule ref="Generic.Arrays.ArrayIndent"/>
+    <rule ref="Generic.Files.LineLength"/>
+    <rule ref="Generic.Formatting.SpaceAfterCast"/>
+    <rule ref="Generic.NamingConventions.UpperCaseConstantName"/>
+
+    <rule ref="PEAR.ControlStructures.MultiLineCondition"/>
+    <rule ref="PEAR.Formatting.MultiLineAssignment"/>
+    <rule ref="PEAR.Commenting.FileComment.MissingAuthorTag"/>
+
+    <rule ref="PSR1.Methods.CamelCapsMethodName"/>
+
+    <rule ref="PSR2.ControlStructures.ControlStructureSpacing"/>
+    <rule ref="PSR2.Files.ClosingTag"/>
+    <rule ref="PSR2.Files.EndFileNewline"/>
+    <rule ref="PSR2.Namespaces.NamespaceDeclaration"/>
+
+    <rule ref="Squiz.Arrays.ArrayBracketSpacing"/>
+    <rule ref="Squiz.Classes.ClassDeclaration"/>
+    <rule ref="Squiz.Classes.ClassFileName"/>
+    <rule ref="Squiz.Operators.ComparisonOperatorUsage"/>
+    <rule ref="Squiz.Operators.IncrementDecrementUsage"/>
+    <rule ref="Squiz.PHP.DisallowBooleanStatement"/>
+    <rule ref="Squiz.PHP.NonExecutableCode"/>
+    <rule ref="Squiz.Scope.StaticThisUsage"/>
+</ruleset>

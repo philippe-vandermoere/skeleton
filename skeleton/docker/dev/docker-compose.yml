@@ -1,0 +1,73 @@
+version: '3.7'
+services:
+    nginx:
+        labels: &label-docker-proxy
+            com.docker-proxy.domain: ${HTTP_HOST}
+            com.docker-proxy.ssl: true
+            com.docker-proxy.certificate-provider.name: github
+            com.docker-proxy.certificate-provider.token: ${GITHUB_TOKEN}
+            com.docker-proxy.certificate-provider.repository: ${GITHUB_CERTIFICATES_REPOSITORY}
+            com.docker-proxy.certificate-provider.certificate_path: ${HTTP_HOST}/fullchain.pem
+            com.docker-proxy.certificate-provider.private_key_path: ${HTTP_HOST}/privkey.pem
+        build:
+            context: nginx
+        environment:
+            PHP_FPM_UPSTREAM: php-fpm:9000
+            DNS_RESOLVER: 127.0.0.11
+        volumes:
+            - ./../../public:/var/www/html/public
+
+    php-fpm: &php-service
+        hostname: ${COMPOSE_PROJECT_NAME}-php-fpm
+        build:
+            context: php
+            args:
+                DOCKER_UID: ${DOCKER_UID}
+        environment:
+            DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?serverVersion=8.0&charset=utf8
+            TIMEZONE: ${TIMEZONE}
+        volumes:
+            - ./../..:/var/www/html
+        tmpfs:
+            - /var/www/html/var/cache:uid=${DOCKER_UID},gid=82
+
+    mysql:
+        image: mysql:8.0
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            TZ: ${TIMEZONE}
+        volumes:
+            - mysql:/var/lib/mysql
+
+    adminer:
+        labels:
+            <<: *label-docker-proxy
+            com.docker-proxy.port: 8080
+            com.docker-proxy.path: /adminer
+        image: adminer:4.7
+        environment:
+            ADMINER_DEFAULT_SERVER: mysql
+
+    redis:
+        image: redis:5.0-alpine
+
+    rabbitmq:
+        labels:
+            <<: *label-docker-proxy
+            com.docker-proxy.port: 15672
+            com.docker-proxy.path: /rabbitmq
+        image: rabbitmq:3.8-management-alpine
+        environment:
+            RABBITMQ_DEFAULT_USER: ${AMQP_USER}
+            RABBITMQ_DEFAULT_PASS: ${AMQP_PASSWORD}
+            RABBITMQ_DEFAULT_VHOST: ${AMQP_VHOST}
+            RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: -rabbitmq_management path_prefix "/rabbitmq"
+        volumes:
+            - rabbitmq:/var/lib/rabbitmq
+
+volumes:
+    mysql:
+    rabbitmq:

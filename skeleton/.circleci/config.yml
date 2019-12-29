@@ -1,0 +1,96 @@
+version: '2.1'
+commands:
+    alpine_checkout:
+        description: Optimize Alpine checkout.
+        steps:
+            - run:
+                name: Install alpine requirements
+                command: apk add git openssh-client curl make
+            - checkout
+
+executors:
+    php:
+        docker:
+            - image: php:7.4-cli-alpine
+
+jobs:
+    vendor:
+        executor: php
+        working_directory: ~/repo
+        steps:
+            - alpine_checkout
+            - restore_cache:
+                key: vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+            - run:
+                name: composer
+                command: |
+                    if [[ ! -f vendor/autoload.php ]]; then
+                        curl --location --silent https://getcomposer.org/composer.phar -o /usr/bin/composer; \
+                        chmod +x /usr/bin/composer; \
+                        composer global require hirak/prestissimo; \
+                        composer install --no-progress --no-interaction; \
+                    fi
+            - save_cache:
+                key: vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+                paths:
+                    - vendor
+            - persist_to_workspace:
+                root: .
+                paths:
+                    - vendor
+
+    phpcs:
+        executor: php
+        working_directory: ~/repo
+        steps:
+            - alpine_checkout
+            - attach_workspace:
+                at: .
+            - run:
+                name: phpcs
+                command: make phpcs
+
+    phpstan:
+        executor: php
+        working_directory: ~/repo
+        steps:
+            - alpine_checkout
+            - attach_workspace:
+                at: .
+            - run:
+                name: phpstan
+                command: make phpstan
+
+    phpunit:
+        executor: php
+        working_directory: ~/repo
+        steps:
+            - alpine_checkout
+            - attach_workspace:
+                at: .
+            - run:
+                name: phpunit
+                command: make phpunit options="--log-junit ~/phpunit/junit.xml --coverage-html ~/coverage-html"
+            - store_artifacts:
+                path: ~/coverage-html
+                destination: coverage-html
+            - store_artifacts:
+                path: ~/phpunit
+                destination: phpunit
+            - store_test_results:
+                path: ~/phpunit
+
+workflows:
+    version: '2.1'
+    tests:
+        jobs:
+            - vendor
+            - phpcs:
+                requires:
+                    - vendor
+            - phpstan:
+                requires:
+                    - vendor
+            - phpunit:
+                requires:
+                    - vendor
