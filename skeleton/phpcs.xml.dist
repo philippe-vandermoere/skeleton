@@ -16,7 +16,6 @@
         <exclude name="PSR12.ControlStructures.ControlStructureSpacing"/>
     </rule>
 
-    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
     <rule ref="Generic.Commenting.Todo"/>
     <rule ref="Generic.PHP.ForbiddenFunctions">
         <properties>
