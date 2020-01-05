@@ -24,8 +24,10 @@ services:
             args:
                 DOCKER_UID: ${DOCKER_UID}
         environment:
-            DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?serverVersion=8.0&charset=utf8
+            PHP_SESSION_HANDLER: redis
+            PHP_SESSION_PATH: tcp://redis:6379?auth=${REDIS_PASSWORD}
             TIMEZONE: ${TIMEZONE}
+            DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?serverVersion=8.0&charset=utf8
         volumes:
             - ./../..:/var/www/html
         tmpfs:
@@ -53,6 +55,9 @@ services:
 
     redis:
         image: redis:5.0-alpine
+        command: redis-server --requirepass ${REDIS_PASSWORD}
+        environment:
+            REDISCLI_AUTH: ${REDIS_PASSWORD}
 
     rabbitmq:
         labels:

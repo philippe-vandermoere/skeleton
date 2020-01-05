@@ -22,11 +22,16 @@ RUN set -xe; \
     ;
 
 # Install php extension
-RUN docker-php-ext-install -j$(nproc) \
+RUN set -xe; \
+    apk add --update --no-cache --virtual .build-deps ${PHPIZE_DEPS}; \
+    docker-php-ext-install -j$(nproc) \
         opcache \
         pdo \
         pdo_mysql \
-    ;
+    ; \
+    pecl install -o redis; \
+    docker-php-ext-enable redis; \
+    apk del --no-network .build-deps;
 
 # Install composer
 RUN set -xe; \
