@@ -4,8 +4,8 @@ commands:
         description: Optimize Alpine checkout.
         steps:
             - run:
-                name: Install alpine requirements
-                command: apk add git openssh-client curl make
+                  name: Install alpine requirements
+                  command: apk add git openssh-client curl make
             - checkout
 
 executors:
@@ -20,24 +20,24 @@ jobs:
         steps:
             - alpine_checkout
             - restore_cache:
-                key: vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+                  key: vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
             - run:
-                name: composer
-                command: |
-                    if [[ ! -f vendor/autoload.php ]]; then
-                        curl --location --silent https://getcomposer.org/composer.phar -o /usr/bin/composer; \
-                        chmod +x /usr/bin/composer; \
-                        composer global require hirak/prestissimo; \
-                        composer install --no-progress --no-interaction; \
-                    fi
+                  name: composer
+                  command: |
+                      if [[ ! -f vendor/autoload.php ]]; then
+                          curl --location --silent https://getcomposer.org/composer.phar -o /usr/bin/composer; \
+                          chmod +x /usr/bin/composer; \
+                          composer global require hirak/prestissimo; \
+                          composer install --no-progress --no-interaction; \
+                      fi
             - save_cache:
-                key: vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
-                paths:
-                    - vendor
+                  key: vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+                  paths:
+                      - vendor
             - persist_to_workspace:
-                root: .
-                paths:
-                    - vendor
+                  root: .
+                  paths:
+                      - vendor
 
     phpcs:
         executor: php
@@ -45,10 +45,10 @@ jobs:
         steps:
             - alpine_checkout
             - attach_workspace:
-                at: .
+                  at: .
             - run:
-                name: phpcs
-                command: make phpcs
+                  name: phpcs
+                  command: make phpcs
 
     phpstan:
         executor: php
@@ -56,10 +56,10 @@ jobs:
         steps:
             - alpine_checkout
             - attach_workspace:
-                at: .
+                  at: .
             - run:
-                name: phpstan
-                command: make phpstan
+                  name: phpstan
+                  command: make phpstan
 
     phpunit:
         executor: php
@@ -67,18 +67,18 @@ jobs:
         steps:
             - alpine_checkout
             - attach_workspace:
-                at: .
+                  at: .
             - run:
-                name: phpunit
-                command: make phpunit options="--log-junit ~/phpunit/junit.xml --coverage-html ~/coverage-html"
+                  name: phpunit
+                  command: make phpunit options="--log-junit ~/phpunit/junit.xml --coverage-html ~/coverage-html"
             - store_artifacts:
-                path: ~/coverage-html
-                destination: coverage-html
+                  path: ~/coverage-html
+                  destination: coverage-html
             - store_artifacts:
-                path: ~/phpunit
-                destination: phpunit
+                  path: ~/phpunit
+                  destination: phpunit
             - store_test_results:
-                path: ~/phpunit
+                  path: ~/phpunit
 
 workflows:
     version: '2.1'
@@ -86,11 +86,11 @@ workflows:
         jobs:
             - vendor
             - phpcs:
-                requires:
-                    - vendor
+                  requires:
+                      - vendor
             - phpstan:
-                requires:
-                    - vendor
+                  requires:
+                      - vendor
             - phpunit:
-                requires:
-                    - vendor
+                  requires:
+                      - vendor
