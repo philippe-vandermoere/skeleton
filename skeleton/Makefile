@@ -47,8 +47,7 @@ stop: .out_docker
 remove: .out_docker
 	@cd docker/dev && docker-compose down --remove-orphans --volumes
 
-restart: .out_docker
-	@cd docker/dev && docker-compose restart
+restart: stop start
 
 ps: .out_docker
 	@cd docker/dev && docker-compose ps
