@@ -133,4 +133,4 @@ while read -r line; do
 done < .env.dist
 
 # compute AMQP_VHOST_URLENCODE
-write_env_value .env AMQP_VHOST $(url_encode $(get_env_value .env AMQP_VHOST))
+write_env_value .env AMQP_VHOST_URLENCODE $(url_encode $(get_env_value .env AMQP_VHOST))
