@@ -44,12 +44,12 @@ endif
 
 .up: .out_docker
 	@cd docker/dev && docker-compose up \
- 		--detach \
-   		--remove-orphans \
-   		--quiet-pull \
-   		--scale nginx=2 \
-   		--scale php-fpm=$(php-fpm) \
-   		--scale php-messenger-consumer=$(php-messenger-consumer)
+	    --detach \
+	    --remove-orphans \
+	    --quiet-pull \
+	    --scale nginx=2 \
+	    --scale php-fpm=$(php-fpm) \
+	    --scale php-messenger-consumer=$(php-messenger-consumer)
 
 .waiting_for_dependency:
 	@make .waiting_for service=redis port=6379 timeout=30
