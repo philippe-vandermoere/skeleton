@@ -29,11 +29,31 @@ endif
 start: .out_docker
 	$(shell docker/dev/configure.sh)
 	@cd docker/dev && docker-compose build --pull --parallel --quiet
-	@cd docker/dev && docker-compose up --detach --remove-orphans --quiet-pull --scale nginx=2 --scale php-fpm=2
-	@cd docker/dev && docker-compose exec php-fpm make .waiting_for_dependency
-	@cd docker/dev && docker-compose exec php-fpm make install
+	@make .up php-fpm=0 php-messenger-consumer=0
+	@cd docker/dev && docker-compose run php-fpm make .waiting_for_dependency
+	@cd docker/dev && docker-compose run php-fpm make install
+	@make .up
+
+ifndef php-fpm
+override php-fpm = 2
+endif
+
+ifndef php-messenger-consumer
+override php-messenger-consumer = 3
+endif
+
+.up: .out_docker
+	@cd docker/dev && docker-compose up \
+ 		--detach \
+   		--remove-orphans \
+   		--quiet-pull \
+   		--scale nginx=2 \
+   		--scale php-fpm=$(php-fpm) \
+   		--scale php-messenger-consumer=$(php-messenger-consumer)
 
 .waiting_for_dependency:
+	@make .waiting_for service=redis port=6379 timeout=30
+	@make .waiting_for service=rabbitmq port=5672 timeout=30
 	@make .waiting_for service=mysql port=3306 timeout=30
 
 .waiting_for:
@@ -64,11 +84,14 @@ redis_cli: .out_docker
 logs: .out_docker
 	@cd docker/dev && docker-compose logs --timestamps --follow --tail=50 $(service)
 
-logs_php-nginx:
+logs_nginx:
 	@make logs service=nginx
 
 logs_php-fpm:
 	@make logs service=php-fpm
+
+logs_messenger-consumer:
+	@make logs service=php-messenger-consumer
 
 logs_mysql:
 	@make logs service=mysql

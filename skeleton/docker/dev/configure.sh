@@ -71,6 +71,22 @@ function get_compute_env_value() {
     echo "${value}"
 }
 
+function get_env_value() {
+    local env_file=$1
+    local key=$2
+
+    echo $(awk -F "${key} *= *" '{print $2}' "${env_file}")
+}
+
+function write_env_value() {
+    local env_file=$1
+    local key=$2
+    local value=$3
+
+    sed -e "/^${key}=/d" -i "${env_file}"
+    echo "${key}=${value}" >> "${env_file}"
+}
+
 function configure_env_value() {
     local env_file=$1
     local key=$2
@@ -93,12 +109,17 @@ function configure_env_value() {
             fi
 
         else
-            value=$(awk -F "${key} *= *" '{print $2}' "${env_file}")
+            value=$(get_env_value "${env_file}" "${key}")
         fi
     fi
 
-    sed -e "/^${key}=/d" -i "${env_file}"
-    echo "${key}=${value}" >> "${env_file}"
+    write_env_value "${env_file}" "${key}" "${value}"
+}
+
+function url_encode() {
+    local text=$1
+
+    echo -n "${text}" | curl -Gso /dev/null -w %{url_effective} --data-urlencode @- "" | cut -c 3-
 }
 
 cd "$(dirname "$0")"
@@ -110,3 +131,6 @@ while read -r line; do
 
     configure_env_value .env "${line%%=*}" "${line#*=}"
 done < .env.dist
+
+# compute AMQP_VHOST_URLENCODE
+write_env_value .env AMQP_VHOST $(url_encode $(get_env_value .env AMQP_VHOST))

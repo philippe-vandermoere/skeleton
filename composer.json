@@ -16,6 +16,7 @@
         "symfony/expression-language": "*",
         "symfony/framework-bundle": "*",
         "symfony/http-client": "*",
+        "symfony/messenger": "*",
         "symfony/monolog-bundle": "^3.5",
         "symfony/orm-pack": "^1.0",
         "symfony/yaml": "*"

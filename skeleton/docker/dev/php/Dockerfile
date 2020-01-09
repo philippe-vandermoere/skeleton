@@ -23,19 +23,25 @@ RUN set -xe; \
 
 # Install php extension
 RUN set -xe; \
-    apk add --update --no-cache --virtual .build-deps ${PHPIZE_DEPS}; \
+    apk add --update --no-cache --virtual .build-deps \
+        ${PHPIZE_DEPS} \
+        rabbitmq-c-dev \
+    ; \
     docker-php-ext-install -j$(nproc) \
         opcache \
         pdo \
         pdo_mysql \
     ; \
-    pecl install -o redis; \
-    docker-php-ext-enable redis; \
-    apk del --no-network .build-deps;
+    pecl install -o redis amqp; \
+    docker-php-ext-enable redis amqp; \
+    apk del --no-network .build-deps; \
+    apk add --update --no-cache \
+        $(scanelf --needed --nobanner --format '%n#p' --recursive /usr/local | tr ',' '\n' | sort -u | awk '{ print "so:" $1 }') \
+    ;
 
 # Install composer
 RUN set -xe; \
-    curl -sl https://getcomposer.org/composer.phar -o /usr/local/bin/composer; \
+    curl -sl https://getcomposer.org/composer-stable.phar -o /usr/local/bin/composer; \
     chmod +x /usr/local/bin/composer;
 
 ARG DOCKER_UID

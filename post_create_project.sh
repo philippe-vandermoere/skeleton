@@ -14,6 +14,9 @@ cp -rpf "${PROJECT_FOLDER}/skeleton/". "${PROJECT_FOLDER}/"
 rm -f "${PROJECT_FOLDER}/config/services.yaml"
 rm -f "${PROJECT_FOLDER}/config/routes.yaml"
 
+echo -e "${GREEN}Activate Symfony Messenger AMQP Transport${RESET}"
+sed s/# MESSENGER_TRANSPORT_DSN=amqp/MESSENGER_TRANSPORT_DSN=amqp/g -i "${PROJECT_FOLDER}/.env"
+
 echo -e "${GREEN}Update config files${RESET}"
 for file in README.md docs/DOCKER.md docker/dev/.env.dist; do
     if [[ -w "${PROJECT_FOLDER}/${file}" ]]; then
