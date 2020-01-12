@@ -15,7 +15,7 @@ services:
             PHP_FPM_UPSTREAM: php-fpm:9000
             DNS_RESOLVER: 127.0.0.11
         volumes:
-            - ./../../public:/var/www/html/public
+            - ./../../public:/var/www/html/public:ro
 
     php-fpm: &php-service
         hostname: ${COMPOSE_PROJECT_NAME}-php-fpm
@@ -42,6 +42,7 @@ services:
 
     mysql:
         image: mysql:8.0
+        hostname: ${COMPOSE_PROJECT_NAME}-mysql
         environment:
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
             MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -52,26 +53,29 @@ services:
             - mysql:/var/lib/mysql
 
     adminer:
+        image: adminer:4.7
+        hostname: ${COMPOSE_PROJECT_NAME}-adminer
         labels:
             <<: *label-docker-proxy
             com.docker-proxy.port: 8080
             com.docker-proxy.path: /adminer
-        image: adminer:4.7
         environment:
             ADMINER_DEFAULT_SERVER: mysql
 
     redis:
         image: redis:5.0-alpine
+        hostname: ${COMPOSE_PROJECT_NAME}-redis
         command: redis-server --requirepass ${REDIS_PASSWORD}
         environment:
             REDISCLI_AUTH: ${REDIS_PASSWORD}
 
     rabbitmq:
+        image: rabbitmq:3.8-management-alpine
+        hostname: ${COMPOSE_PROJECT_NAME}-rabbitmq
         labels:
             <<: *label-docker-proxy
             com.docker-proxy.port: 15672
             com.docker-proxy.path: /rabbitmq
-        image: rabbitmq:3.8-management-alpine
         environment:
             RABBITMQ_DEFAULT_USER: ${AMQP_USER}
             RABBITMQ_DEFAULT_PASS: ${AMQP_PASSWORD}

@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+require \dirname(__DIR__) . '/vendor/autoload.php';
+
+use App\Command;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Input\ArrayInput;
+
+$application = new Application();
+$application->add(new Command\PostCreateProjectCommand());
+$application->add(new Command\BuildPharCommand());
+
+if ('' !== Phar::running()) {
+    $application->setDefaultCommand(Command\PostCreateProjectCommand::getDefaultName());
+}
+
+$application->run();

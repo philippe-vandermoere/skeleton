@@ -26,8 +26,13 @@ ifeq (, $(shell which docker))
 	$(error "You must run this command outside the docker container. ")
 endif
 
-start: .out_docker
+configure: .out_docker
 	$(shell docker/dev/configure.sh)
+
+reset_configuration: .out_docker
+	rm -f docker/dev/.env
+
+start: .out_docker configure
 	@cd docker/dev && docker-compose build --pull --parallel --quiet
 	@make .up php-fpm=0 php-messenger-consumer=0
 	@cd docker/dev && docker-compose run php-fpm make .waiting_for_dependency
