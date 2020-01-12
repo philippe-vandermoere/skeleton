@@ -21,7 +21,7 @@
 
 ## Install
 
-### Composer
+### phar
 
 requirements:
 - PHP >= 7.4
@@ -31,7 +31,23 @@ requirements:
 - PHP extension redis
 
 ```bash
-composer create-project philippe-vandermoere/skeleton {project name} 
+sudo curl -sl {url phar} -o /usr/local/bin/philou
+sudo chmod +x 
+philou project:create {project directory} --project-name {project name} --project-url {project url}
+```
+
+### PHP
+
+requirements:
+- PHP >= 7.4
+- PHP extension AMQP
+- PHP extension curl
+- PHP extension json
+- PHP extension redis
+
+```bash
+composer install
+bin/console project:create {project directory} --project-name {project name} --project-url {project url}
 ```
 
 ### Docker
@@ -43,7 +59,7 @@ composer create-project philippe-vandermoere/skeleton {project name}
 ### Build Phar
 
 ```bash
-phar/bin/console phar:build
+bin/console phar:build
 ```
 
 ```bash

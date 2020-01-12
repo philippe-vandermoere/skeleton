@@ -8,11 +8,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 
 $application = new Application();
-$application->add(new Command\PostCreateProjectCommand());
+$application->add(new Command\CreateProjectCommand());
 $application->add(new Command\BuildPharCommand());
-
-if ('' !== Phar::running()) {
-    $application->setDefaultCommand(Command\PostCreateProjectCommand::getDefaultName());
-}
 
 $application->run();
