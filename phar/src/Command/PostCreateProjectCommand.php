@@ -206,7 +206,7 @@ class PostCreateProjectCommand extends Command
             [
                 $this->projectDirectory . '/skeleton',
                 $this->projectDirectory . '/phar',
-                $this->projectDirectory . '/post_create_project.phar',
+             //   $this->projectDirectory . '/post_create_project.phar',
             ]
         );
 
