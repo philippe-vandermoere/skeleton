@@ -1,16 +1,13 @@
 {
-    "name": "philippe-vandermoere/skeleton_name",
     "type": "project",
     "license": "MIT",
     "minimum-stability": "stable",
     "require": {
         "php": "^7.4",
-        "ext-amqp": "*",
         "ext-curl": "*",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-json": "*",
-        "ext-redis": "*",
         "symfony/flex": "^1.6"
     },
     "flex-require": {

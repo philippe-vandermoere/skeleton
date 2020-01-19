@@ -26,12 +26,18 @@ class CreateProjectCommand extends Command
 {
     protected static $defaultName = 'project:create';
 
+    protected const DEFAULT_DOMAIN_NAME = 'philou.dev';
+
     protected Filesystem $filesystem;
     protected SymfonyStyle $style;
     protected string $skeletonDirectory;
     protected string $projectDirectory;
     protected string $projectName;
     protected string $projectUrl;
+    protected bool $initializeGit;
+    protected bool $fixFilesOwner;
+    protected int $uid;
+    protected int $gid;
 
     public function __construct()
     {
@@ -44,50 +50,44 @@ class CreateProjectCommand extends Command
     protected function configure()
     {
         $this
-            ->setDescription('Create project from skeleton')
+            ->setDescription('Create project from skeleton.')
             ->addArgument(
-                'project-directory',
+                'name',
                 InputArgument::REQUIRED,
-                'Define the directory to create project'
+                'Define the project name.'
             )
             ->addOption(
-                'project-name',
+                'url',
                 null,
                 InputOption::VALUE_REQUIRED,
-                '',
+                'Define the project URL.'
             )
             ->addOption(
-                'project-url',
+                'directory',
                 null,
                 InputOption::VALUE_REQUIRED,
-                '',
+                'Define the directory to create project.',
+                \getcwd()
+            )
+            ->addOption(
+                'delete-project-directory',
+                null,
+                InputOption::VALUE_NONE,
+                'Delete the project directory if exist.'
+            )
+            ->addOption(
+                'no-initialize-git',
+                null,
+                InputOption::VALUE_NONE,
+                'Do not initialize GIT repository.'
+            )
+            ->addOption(
+                'fix-files-owner',
+                null,
+                InputOption::VALUE_NONE,
+                'Fix Files owner.'
             )
         ;
-    }
-
-    protected function interact(InputInterface $input, OutputInterface $output)
-    {
-        $style = new SymfonyStyle($input, $output);
-
-        if (false === \is_string($input->getOption('project-name'))) {
-            $input->setOption(
-                'project-name',
-                $style->ask(
-                    'Define the project name.',
-                    \basename($input->getArgument('project-directory'))
-                )
-            );
-        }
-
-        if (false === \is_string($input->getOption('project-url'))) {
-            $input->setOption(
-                'project-url',
-                $style->ask(
-                    'Define the project URL.',
-                    \strtolower($input->getOption('project-name')) . '.philou.dev'
-                )
-            );
-        }
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -101,6 +101,7 @@ class CreateProjectCommand extends Command
             ->removeUsedFiles()
             ->configureProject()
             ->initializeGitRepository()
+            ->fixFilesOwner()
         ;
 
         return 0;
@@ -108,10 +109,17 @@ class CreateProjectCommand extends Command
 
     protected function parseInput(InputInterface $input): self
     {
-        $this->projectDirectory = trim($input->getArgument('project-directory'));
+        $this->projectName = \strtolower($input->getArgument('name'));
+        $this->projectDirectory = $input->getOption('directory') . '/' . $this->projectName;
+        $this->projectUrl = $input->getOption('url') ?? $this->projectName . static::DEFAULT_DOMAIN_NAME;
+        $this->initializeGit = (false === $input->getOption('no-initialize-git'));
 
-        if (false === $this->filesystem->isAbsolutePath($this->projectDirectory)) {
-            $this->projectDirectory = $_SERVER['PWD'] . '/' . $this->projectDirectory;
+        $this->uid = \fileowner($input->getOption('directory'));
+        $this->gid = \filegroup($input->getOption('directory'));
+        $this->fixFilesOwner = $input->hasOption('fix-files-owner');
+
+        if (true === $input->getOption('delete-project-directory')) {
+            $this->filesystem->remove($this->projectDirectory);
         }
 
         $this->filesystem->mkdir($this->projectDirectory, 0755);
@@ -124,9 +132,6 @@ class CreateProjectCommand extends Command
                 )
             );
         }
-
-        $this->projectName = $input->getOption('project-name') ?? \strtolower(\basename($this->projectDirectory));
-        $this->projectUrl = $input->getOption('project-url') ?? \strtolower($this->projectName) . '.philou.dev';
 
         return $this;
     }
@@ -176,8 +181,8 @@ class CreateProjectCommand extends Command
     protected function composerInstall(): self
     {
         return $this
-            ->executeCommand(['composer', 'install', '--ansi', '--no-interaction', '--no-progress'])
-            ->executeCommand(['composer', 'update', '--lock', '--ansi', '--no-interaction'])
+            ->executeCommand(['composer', 'install', '--no-interaction', '--no-progress', '--ansi'])
+            ->executeCommand(['composer', 'update', '--lock', '--no-interaction', '--no-progress', '--ansi'])
         ;
     }
 
@@ -264,8 +269,7 @@ class CreateProjectCommand extends Command
 
     protected function initializeGitRepository(): self
     {
-        $question = new ConfirmationQuestion('Do you want to initialize git repository', true);
-        if (false === $this->style->askQuestion($question)) {
+        if (false === $this->initializeGit) {
             return $this;
         }
 
@@ -282,6 +286,25 @@ class CreateProjectCommand extends Command
         return $this;
     }
 
+    protected function fixFilesOwner(): self
+    {
+        if (false === $this->fixFilesOwner) {
+            return $this;
+        }
+
+        \chown($this->projectDirectory, $this->uid);
+        \chgrp($this->projectDirectory, $this->gid);
+
+        foreach ((new Finder())->in($this->projectDirectory)->ignoreDotFiles(false)->ignoreVCS(false) as $splFileInfo) {
+            \chown($splFileInfo->getRealPath(), $this->uid);
+            \chgrp($splFileInfo->getRealPath(), $this->gid);
+        }
+
+        $this->style->success(sprintf('Fix Files Owner (%d:%d).', $this->uid, $this->gid));
+
+        return $this;
+    }
+
     protected function executeCommand(array $command): self
     {
         $process = new Process(
@@ -292,7 +315,8 @@ class CreateProjectCommand extends Command
         $process->mustRun(
             function ($type, $buffer)  {
                 $this->style->write($buffer);
-            });
+            }
+        );
 
         return $this;
     }
