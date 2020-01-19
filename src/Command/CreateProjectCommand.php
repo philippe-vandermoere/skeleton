@@ -42,7 +42,6 @@ class CreateProjectCommand extends Command
     public function __construct()
     {
         $this->filesystem = new Filesystem();
-        $this->skeletonDirectory = \dirname(__DIR__, 2);
 
         parent::__construct();
     }
@@ -109,6 +108,7 @@ class CreateProjectCommand extends Command
 
     protected function parseInput(InputInterface $input): self
     {
+        $this->skeletonDirectory = \dirname(__DIR__, 2) . '/skeleton';
         $this->projectName = \strtolower($input->getArgument('name'));
         $this->projectDirectory = $input->getOption('directory') . '/' . $this->projectName;
         $this->projectUrl = $input->getOption('url') ?? $this->projectName . static::DEFAULT_DOMAIN_NAME;
@@ -141,7 +141,7 @@ class CreateProjectCommand extends Command
         $finder = new Finder();
         $finder
             ->files()
-            ->in($this->skeletonDirectory . '/skeleton')
+            ->in($this->skeletonDirectory)
             ->ignoreDotFiles(false)
         ;
 
@@ -190,8 +190,8 @@ class CreateProjectCommand extends Command
     {
         $this->filesystem->remove(
             [
-                $this->skeletonDirectory . '/config/services.yaml',
-                $this->skeletonDirectory . '/config/routes.yaml',
+                $this->projectDirectory . '/config/services.yaml',
+                $this->projectDirectory . '/config/routes.yaml',
             ]
         );
 
