@@ -23,13 +23,20 @@
 
 Options
 
-| Name                     | Description                             | Default Value             |
-|---                       |---                                      |---                        |
-| url                      | Define the project URL.                 | {project name}.philou.dev |
-| directory                | Define the directory to create project. | current directory         |
-| delete-project-directory | Delete the project directory if exist.  | false                     |
-| no-initialize-git        | Do not initialize GIT repository.       | true                      |
-| fix-files-owner          | Fix Files owner.                        | false                     |
+| Name                     | Description                                          | Default Value             |
+|---                       |---                                                   |---                        |
+| url                      | Define the project URL.                              | {project name}.philou.dev |
+| directory                | Define the directory to create project. see example. | current directory         |
+| delete-project-directory | Delete the project directory if exist.               | false                     |
+| no-initialize-git        | Do not initialize GIT repository.                    | true                      |
+| fix-files-owner          | Fix Files owner.                                     | false                     |
+
+Example:
+```bash
+bin/console project:create test --directory /home/test/project
+```
+
+The project is found in the folder `/home/test/project/test`
 
 ### Docker
 
@@ -37,7 +44,7 @@ requirements:
 - docker
 
 ```bash
- docker run -rm -v {directory}:/project philippev/skeleton:latest {project name}
+ docker run --rm -ti -v {directory}:/project philippev/skeleton:latest {project name}
 ```
 
 ### PHAR
