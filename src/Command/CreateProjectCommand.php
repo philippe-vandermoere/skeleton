@@ -111,7 +111,7 @@ class CreateProjectCommand extends Command
         $this->skeletonDirectory = \dirname(__DIR__, 2) . '/skeleton';
         $this->projectName = \strtolower($input->getArgument('name'));
         $this->projectDirectory = $input->getOption('directory') . '/' . $this->projectName;
-        $this->projectUrl = $input->getOption('url') ?? $this->projectName . static::DEFAULT_DOMAIN_NAME;
+        $this->projectUrl = $input->getOption('url') ?? $this->projectName . '.' . static::DEFAULT_DOMAIN_NAME;
         $this->initializeGit = (false === $input->getOption('no-initialize-git'));
 
         $this->uid = \fileowner($input->getOption('directory'));
