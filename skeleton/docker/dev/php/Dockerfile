@@ -54,7 +54,7 @@ RUN set -xe; \
     apk del --no-network .build-deps;
 
 # Add bashrc
-COPY config/.bashrc /var/www/.bashrc
+COPY --chown=www-data:www-data config/.bashrc /var/www/.bashrc
 
 # Configure php-fpm
 COPY config/php-fpm/* /usr/local/etc/php-fpm.d/
@@ -64,7 +64,7 @@ COPY config/php/* /usr/local/etc/php/conf.d/
 
 USER www-data
 
-RUN composer global require hirak/prestissimo;
+RUN composer global require hirak/prestissimo
 
 WORKDIR /var/www/html
 
