@@ -35,8 +35,8 @@ reset_configuration: .out_docker
 start: .out_docker configure
 	@cd docker/dev && docker-compose build --pull --parallel --quiet
 	@make .up php-fpm=0 php-messenger-consumer=0
-	@cd docker/dev && docker-compose run php-fpm make .waiting_for_dependency
-	@cd docker/dev && docker-compose run php-fpm make install
+	@cd docker/dev && docker-compose run --rm php-fpm make .waiting_for_dependency
+	@cd docker/dev && docker-compose run --rm php-fpm make install
 	@make .up
 
 ifndef php-fpm
@@ -78,7 +78,7 @@ ps: .out_docker
 	@cd docker/dev && docker-compose ps
 
 shell: .out_docker
-	@cd docker/dev && docker-compose exec php-fpm /bin/bash
+	@cd docker/dev && docker-compose run --rm php-fpm /bin/bash
 
 mysql_cli: .out_docker
 	@cd docker/dev && docker-compose exec mysql /bin/bash -c 'mysql -uroot -p$${MYSQL_ROOT_PASSWORD} $${MYSQL_DATABASE}'
