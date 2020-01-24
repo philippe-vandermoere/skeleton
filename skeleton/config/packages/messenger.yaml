@@ -5,7 +5,16 @@ framework:
 
         transports:
             # https://symfony.com/doc/current/messenger.html#transport-configuration
-            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: common
+                        type: topic
+                    queues:
+                        skeleton_name:
+                            binding_keys:
+                                - event.broadcast
 
         routing:
             # Route your messages to the transports
