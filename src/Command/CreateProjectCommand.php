@@ -11,6 +11,7 @@ namespace App\Command;
 
 use Symfony\Component\Console\{
     Command\Command,
+    Exception\InvalidArgumentException,
     Input\InputArgument,
     Input\InputInterface,
     Input\InputOption,
@@ -26,8 +27,6 @@ class CreateProjectCommand extends Command
 {
     protected static $defaultName = 'project:create';
 
-    protected const DEFAULT_DOMAIN_NAME = 'philou.dev';
-
     protected Filesystem $filesystem;
     protected SymfonyStyle $style;
     protected string $skeletonDirectory;
@@ -39,13 +38,6 @@ class CreateProjectCommand extends Command
     protected int $uid;
     protected int $gid;
 
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-
-        parent::__construct();
-    }
-
     protected function configure()
     {
         $this
@@ -53,45 +45,97 @@ class CreateProjectCommand extends Command
             ->addArgument(
                 'name',
                 InputArgument::REQUIRED,
-                'Define the project name.'
+                'Define the project name'
             )
             ->addOption(
                 'url',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Define the project URL.'
+                'Define the project URL'
             )
             ->addOption(
                 'directory',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Define the directory to create project.',
+                'Define the directory to create project',
                 \getcwd()
             )
             ->addOption(
                 'delete-project-directory',
                 null,
                 InputOption::VALUE_NONE,
-                'Delete the project directory if exist.'
+                'Delete the project directory if exist'
             )
             ->addOption(
                 'no-initialize-git',
                 null,
                 InputOption::VALUE_NONE,
-                'Do not initialize GIT repository.'
+                'Disable initialize GIT repository'
             )
             ->addOption(
                 'fix-files-owner',
                 null,
                 InputOption::VALUE_NONE,
-                'Fix Files owner.'
+                'Fix Files owner'
             )
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function interact(InputInterface $input, OutputInterface $output)
     {
         $this->style = new SymfonyStyle($input, $output);
+
+        if (null === $input->getArgument('name')) {
+            $input->setArgument(
+                'name',
+                $this->style->ask('Define the project name ?')
+            );
+        }
+
+        $optionsDefinition = \array_filter(
+            $this->getDefinition()->getOptions(),
+            function (InputOption $option): bool {
+                foreach ($this->getApplication()->getDefinition()->getOptions() as $applicationOption) {
+                    if (true === $option->equals($applicationOption)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        );
+
+        foreach ($optionsDefinition as $optionDefinition) {
+            if (null === $input->getOption($optionDefinition->getName())
+                || $optionDefinition->getDefault() === $input->getOption($optionDefinition->getName())
+            ) {
+                if (true === $optionDefinition->isValueRequired()) {
+                    $input->setOption(
+                        $optionDefinition->getName(),
+                        $this->style->ask(
+                            $optionDefinition->getDescription() . ' ?',
+                            $optionDefinition->getDefault(),
+                        )
+                    );
+                } elseif (false === $optionDefinition->acceptValue()) {
+                    $input->setOption(
+                        $optionDefinition->getName(),
+                        $this->style->askQuestion(
+                            new ConfirmationQuestion(
+                                $optionDefinition->getDescription(). ' ?',
+                                $optionDefinition->getDefault()
+                            )
+                        )
+                    );
+                }
+            }
+        }
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $this->filesystem ??= new Filesystem();
+        $this->style ??= new SymfonyStyle($input, $output);
 
         $this
             ->parseInput($input)
@@ -108,15 +152,34 @@ class CreateProjectCommand extends Command
 
     protected function parseInput(InputInterface $input): self
     {
+        if (1 !== \preg_match('/[a-zA-Z0-9\-_]{4,}/', $input->getArgument('name') ?? '')) {
+            throw new InvalidArgumentException(
+                \sprintf(
+                    'The project name `%s` must be respect regex `%s`.',
+                    $input->getArgument('name') ?? '',
+                    '[a-zA-Z0-9-_]{4,}'
+                )
+            );
+        }
+
+        if (false === \filter_var($input->getOption('url'), FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+            throw new InvalidArgumentException(
+                \sprintf(
+                    'The project url `%s` must be a valid domain.',
+                    $input->getOption('url') ?? ''
+                )
+            );
+        }
+
         $this->skeletonDirectory = \dirname(__DIR__, 2) . '/skeleton';
-        $this->projectName = \strtolower($input->getArgument('name'));
+        $this->projectName = $input->getArgument('name');
         $this->projectDirectory = $input->getOption('directory') . '/' . $this->projectName;
-        $this->projectUrl = $input->getOption('url') ?? $this->projectName . '.' . static::DEFAULT_DOMAIN_NAME;
+        $this->projectUrl = $input->getOption('url');
         $this->initializeGit = (false === $input->getOption('no-initialize-git'));
 
         $this->uid = \fileowner($input->getOption('directory'));
         $this->gid = \filegroup($input->getOption('directory'));
-        $this->fixFilesOwner = $input->hasOption('fix-files-owner');
+        $this->fixFilesOwner = $input->getOption('fix-files-owner');
 
         if (true === $input->getOption('delete-project-directory')) {
             $this->filesystem->remove($this->projectDirectory);
@@ -145,17 +208,17 @@ class CreateProjectCommand extends Command
             ->ignoreDotFiles(false)
         ;
 
-        foreach ($finder as $file) {
-            $targetFileName = $this->projectDirectory . '/' . $file->getRelativePathname();
+        foreach ($finder as $splFileInfo) {
+            $targetFileName = $this->projectDirectory . '/' . $splFileInfo->getRelativePathname();
 
             $this->filesystem->mkdir(\dirname($targetFileName), 0755);
             $this->filesystem->remove($targetFileName);
             $this->filesystem->appendToFile(
                 $targetFileName,
-                $this->getComputeContent($file->getContents())
+                $this->getComputeContent($splFileInfo->getContents())
             );
 
-            $this->filesystem->chmod($targetFileName, (true === $file->isExecutable() ? 0755 : 0640));
+            $this->filesystem->chmod($targetFileName, (true === $splFileInfo->isExecutable() ? 0755 : 0640));
         }
 
         $this->style->success('Copy skeleton files to project.');
@@ -219,15 +282,15 @@ class CreateProjectCommand extends Command
             ->name('.gitignore')
         ;
 
-        foreach ($finder as $file) {
+        foreach ($finder as $splFileInfo) {
             $this->filesystem->rename(
-                $file->getPathname(),
-                $file->getPath() . '/.gitkeep',
+                $splFileInfo->getPathname(),
+                $splFileInfo->getPath() . '/.gitkeep',
                 true
             );
         }
 
-        $this->style->success('Rename file `.gitignore` in folder `src` to `.gitkeep`.');
+        $this->style->success('Rename file `.gitignore` in folder `src`, `tests` to `.gitkeep`.');
 
         return $this;
     }
@@ -273,8 +336,6 @@ class CreateProjectCommand extends Command
             return $this;
         }
 
-        $this->filesystem->remove($this->projectDirectory . '/.git');
-
         $this
             ->executeCommand(['git', 'init'])
             ->executeCommand(['git', 'add', '.'])
@@ -292,10 +353,15 @@ class CreateProjectCommand extends Command
             return $this;
         }
 
-        \chown($this->projectDirectory, $this->uid);
-        \chgrp($this->projectDirectory, $this->gid);
+        $finder = new Finder();
+        $finder
+            ->in($this->projectDirectory)
+            ->ignoreDotFiles(false)
+            ->ignoreVCS(false)
+            ->append([$this->projectDirectory])
+        ;
 
-        foreach ((new Finder())->in($this->projectDirectory)->ignoreDotFiles(false)->ignoreVCS(false) as $splFileInfo) {
+        foreach ($finder as $splFileInfo) {
             \chown($splFileInfo->getRealPath(), $this->uid);
             \chgrp($splFileInfo->getRealPath(), $this->gid);
         }
