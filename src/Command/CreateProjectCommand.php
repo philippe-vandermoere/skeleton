@@ -9,15 +9,14 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use Symfony\Component\Console\{
-    Command\Command,
+use Symfony\Component\Console\{Command\Command,
+    Exception\InvalidArgumentException,
     Input\InputArgument,
     Input\InputInterface,
     Input\InputOption,
     Output\OutputInterface,
     Question\ConfirmationQuestion,
-    Style\SymfonyStyle
-};
+    Style\SymfonyStyle};
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
@@ -25,8 +24,6 @@ use Symfony\Component\Process\Process;
 class CreateProjectCommand extends Command
 {
     protected static $defaultName = 'project:create';
-
-    protected const DEFAULT_DOMAIN_NAME = 'philou.dev';
 
     protected Filesystem $filesystem;
     protected SymfonyStyle $style;
@@ -46,38 +43,38 @@ class CreateProjectCommand extends Command
             ->addArgument(
                 'name',
                 InputArgument::REQUIRED,
-                'Define the project name.'
+                'Define the project name'
             )
             ->addOption(
                 'url',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Define the project URL.'
+                'Define the project URL'
             )
             ->addOption(
                 'directory',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Define the directory to create project.',
+                'Define the directory to create project',
                 \getcwd()
             )
             ->addOption(
                 'delete-project-directory',
                 null,
                 InputOption::VALUE_NONE,
-                'Delete the project directory if exist.'
+                'Delete the project directory if exist'
             )
             ->addOption(
                 'no-initialize-git',
                 null,
                 InputOption::VALUE_NONE,
-                'Do not initialize GIT repository.'
+                'Disable initialize GIT repository'
             )
             ->addOption(
                 'fix-files-owner',
                 null,
                 InputOption::VALUE_NONE,
-                'Fix Files owner.'
+                'Fix Files owner'
             )
         ;
     }
@@ -93,55 +90,38 @@ class CreateProjectCommand extends Command
             );
         }
 
-        if (false === \is_string($input->getArgument('name')) || '' === $input->getArgument('name')) {
-            throw new \InvalidArgumentException('You must define the project name.');
-        }
+        $optionsDefinition = \array_filter(
+            $this->getDefinition()->getOptions(),
+            function (InputOption $option): bool {
+                foreach ($this->getApplication()->getDefinition()->getOptions() as $applicationOption) {
+                    if (true === $option->equals($applicationOption)) {
+                        return false;
+                    }
+                }
 
-        $questions = [
-            'url' => [
-                'type' => 'question',
-                'question' => 'Define the project url ?',
-                'default' => \strtolower($input->getArgument('name')) . '.' . static::DEFAULT_DOMAIN_NAME,
-            ],
-            'directory' => [
-                'type' => 'question',
-                'question' => 'Define the directory to create project ?',
-                'default' => \getcwd(),
-            ],
-            'delete-project-directory' => [
-                'type' => 'confirmationQuestion',
-                'question' => 'Do you want to delete the project directory if exist ?',
-                'default' => false,
-            ],
-            'no-initialize-git' => [
-                'type' => 'confirmationQuestion',
-                'question' => 'Do you want to skip GIT repository initialize ?',
-                'default' => false,
-            ],
-            'fix-files-owner' => [
-                'type' => 'confirmationQuestion',
-                'question' => 'Do you want to fix Files owner ?',
-                'default' => false,
-            ],
-        ];
+                return true;
+            }
+        );
 
-        foreach ($questions as $option => $data) {
-            if (null === $input->getOption($option)) {
-                if ('question' === $data['type']) {
+        foreach ($optionsDefinition as $optionDefinition) {
+            if (null === $input->getOption($optionDefinition->getName())
+                || $optionDefinition->getDefault() === $input->getOption($optionDefinition->getName())
+            ) {
+                if (true === $optionDefinition->isValueRequired()) {
                     $input->setOption(
-                        $option,
+                        $optionDefinition->getName(),
                         $this->style->ask(
-                            $data['question'],
-                            $data['default']
+                            $optionDefinition->getDescription() . ' ?',
+                            $optionDefinition->getDefault(),
                         )
                     );
-                } elseif ('confirmationQuestion' === $data['type']) {
+                } elseif (false === $optionDefinition->acceptValue()) {
                     $input->setOption(
-                        $option,
+                        $optionDefinition->getName(),
                         $this->style->askQuestion(
                             new ConfirmationQuestion(
-                                $data['question'],
-                                $data['default']
+                                $optionDefinition->getDescription(). ' ?',
+                                $optionDefinition->getDefault()
                             )
                         )
                     );
@@ -170,10 +150,29 @@ class CreateProjectCommand extends Command
 
     protected function parseInput(InputInterface $input): self
     {
+        if (1 !== \preg_match('/[a-zA-Z0-9\-_]{4,}/', $input->getArgument('name') ?? '')) {
+            throw new InvalidArgumentException(
+                \sprintf(
+                    'The project name `%s` must be respect regex `%s`.',
+                    $input->getArgument('name') ?? '',
+                    '[a-zA-Z0-9-_]{4,}'
+                )
+            );
+        }
+
+        if (false === \filter_var($input->getOption('url'), FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+            throw new InvalidArgumentException(
+                \sprintf(
+                    'The project url `%s` must be a valid domain.',
+                    $input->getOption('url') ?? ''
+                )
+            );
+        }
+
         $this->skeletonDirectory = \dirname(__DIR__, 2) . '/skeleton';
-        $this->projectName = \strtolower($input->getArgument('name'));
+        $this->projectName = $input->getArgument('name');
         $this->projectDirectory = $input->getOption('directory') . '/' . $this->projectName;
-        $this->projectUrl = $input->getOption('url') ?? $this->projectName . '.' . static::DEFAULT_DOMAIN_NAME;
+        $this->projectUrl = $input->getOption('url');
         $this->initializeGit = (false === $input->getOption('no-initialize-git'));
 
         $this->uid = \fileowner($input->getOption('directory'));
