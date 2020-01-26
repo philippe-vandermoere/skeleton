@@ -9,14 +9,16 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use Symfony\Component\Console\{Command\Command,
+use Symfony\Component\Console\{
+    Command\Command,
     Exception\InvalidArgumentException,
     Input\InputArgument,
     Input\InputInterface,
     Input\InputOption,
     Output\OutputInterface,
     Question\ConfirmationQuestion,
-    Style\SymfonyStyle};
+    Style\SymfonyStyle
+};
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
