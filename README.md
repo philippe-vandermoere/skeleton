@@ -44,7 +44,8 @@ requirements:
 - docker
 
 ```bash
- docker run --rm -ti -v {directory}:/project philippev/skeleton:latest {project name}
+docker pull philippev/skeleton:latest
+docker run --rm -ti -v {directory}:/project philippev/skeleton:latest {project name}
 ```
 
 ### PHAR
