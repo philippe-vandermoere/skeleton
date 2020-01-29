@@ -17,7 +17,7 @@ phpunit:
 tests: phpcs phpstan phpunit
 
 install:
-	composer install
+	composer install --no-interaction --no-progress --ansi
 	bin/console doctrine:database:create --no-interaction --if-not-exists
 	bin/console doctrine:migrations:migrate --no-interaction --query-time --allow-no-migration
 

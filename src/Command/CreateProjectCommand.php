@@ -139,8 +139,8 @@ class CreateProjectCommand extends Command
 
         $this
             ->parseInput($input)
+            ->composer()
             ->copySkeletonFiles()
-            ->composerInstall()
             ->removeUsedFiles()
             ->configureProject()
             ->initializeGitRepository()
@@ -199,6 +199,19 @@ class CreateProjectCommand extends Command
         return $this;
     }
 
+    protected function composer(): self
+    {
+        $this->filesystem->copy(
+            $this->skeletonDirectory . '/composer.json',
+            $this->projectDirectory . '/composer.json'
+        );
+
+        return $this
+            ->executeCommand(['composer', 'install', '--no-interaction', '--no-progress', '--ansi'])
+            ->executeCommand(['composer', 'update', '--lock', '--no-interaction', '--no-progress', '--ansi'])
+        ;
+    }
+
     protected function copySkeletonFiles(): self
     {
         $finder = new Finder();
@@ -206,6 +219,7 @@ class CreateProjectCommand extends Command
             ->files()
             ->in($this->skeletonDirectory)
             ->ignoreDotFiles(false)
+            ->notName('composer.json')
         ;
 
         foreach ($finder as $splFileInfo) {
@@ -239,14 +253,6 @@ class CreateProjectCommand extends Command
         }
 
         return $content;
-    }
-
-    protected function composerInstall(): self
-    {
-        return $this
-            ->executeCommand(['composer', 'install', '--no-interaction', '--no-progress', '--ansi'])
-            ->executeCommand(['composer', 'update', '--lock', '--no-interaction', '--no-progress', '--ansi'])
-        ;
     }
 
     protected function removeUsedFiles(): self

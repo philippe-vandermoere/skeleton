@@ -1,6 +1,5 @@
 {
     "type": "project",
-    "license": "MIT",
     "minimum-stability": "stable",
     "require": {
         "php": "^7.4",
@@ -10,6 +9,7 @@
         "ext-json": "*",
         "symfony/flex": "^1.6"
     },
+    "require-dev": {},
     "flex-require": {
         "symfony/console": "*",
         "symfony/dotenv": "*",
