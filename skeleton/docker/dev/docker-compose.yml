@@ -9,6 +9,7 @@ services:
             com.docker-proxy.certificate-provider.repository: ${GITHUB_CERTIFICATES_REPOSITORY}
             com.docker-proxy.certificate-provider.certificate_path: ${HTTP_HOST}/fullchain.pem
             com.docker-proxy.certificate-provider.private_key_path: ${HTTP_HOST}/privkey.pem
+            com.docker-proxy.certificate-provider.certificate_chain_path: ${HTTP_HOST}/chain.pem
         build:
             context: nginx
         environment:
