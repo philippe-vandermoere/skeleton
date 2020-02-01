@@ -23,13 +23,13 @@
 
 Options
 
-| Name                     | Description                                          | Default Value             |
-|---                       |---                                                   |---                        |
-| url                      | Define the project URL.                              | {project name}.philou.dev |
-| directory                | Define the directory to create project. see example. | current directory         |
-| delete-project-directory | Delete the project directory if exist.               | false                     |
-| no-initialize-git        | Do not initialize GIT repository.                    | true                      |
-| fix-files-owner          | Fix Files owner.                                     | false                     |
+| Name                     | Description                                          | Default Value     |
+|---                       |---                                                   |---                |
+| url                      | Define the project URL.                              |                   |
+| directory                | Define the directory to create project. see example. | current directory |
+| delete-project-directory | Delete the project directory if exist.               | false             |
+| no-initialize-git        | Do not initialize GIT repository.                    | true              |
+| fix-files-owner          | Fix Files owner.                                     | false             |
 
 Example:
 ```bash

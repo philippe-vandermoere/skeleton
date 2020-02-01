@@ -232,7 +232,7 @@ class CreateProjectCommand extends Command
                 $this->getComputeContent($splFileInfo->getContents())
             );
 
-            $this->filesystem->chmod($targetFileName, (true === $splFileInfo->isExecutable() ? 0755 : 0640));
+            $this->filesystem->chmod($targetFileName, (true === $splFileInfo->isExecutable() ? 0755 : 0644));
         }
 
         $this->style->success('Copy skeleton files to project.');

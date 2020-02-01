@@ -75,7 +75,7 @@ services:
         labels:
             <<: *label-docker-proxy
             com.docker-proxy.port: 15672
-            com.docker-proxy.path: /rabbitmq
+            com.docker-proxy.path: /rabbitmq/
         environment:
             RABBITMQ_DEFAULT_USER: ${AMQP_USER}
             RABBITMQ_DEFAULT_PASS: ${AMQP_PASSWORD}
