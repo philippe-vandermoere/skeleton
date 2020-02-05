@@ -39,7 +39,7 @@ services:
         <<: *php-service
         hostname: ${COMPOSE_PROJECT_NAME}-php-messenger-consumer
         restart: always
-        command: bin/console messenger:consume async --limit=500 --time-limit=300 -vv
+        command: bin/console messenger:consume async --limit=5000 --time-limit=300 -vv
 
     mysql:
         image: mysql:8.0
