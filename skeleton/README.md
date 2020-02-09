@@ -1,4 +1,6 @@
-# Skeleton_name
+# {{ Skeleton_name }}
+
+{{ skeleton_description }}
 
 ## Requirements
 
@@ -33,12 +35,12 @@ List of configuration's options:
 
 List of configuration's options automatically compute:
 
-| Option               | Description                             |
-|---                   |---                                      |
-| COMPOSE_PROJECT_NAME | The name of docker stack: skeleton_name |
-| HTTP_HOST            | The URL of application: skeleton_url    |
-| DOCKER_UID           | The UID of php container (id -u)        |
-| AMQP_VHOST_URLENCODE | RabbitMq urlencode                      |
+| Option               | Description                                   |
+|---                   |---                                            |
+| COMPOSE_PROJECT_NAME | The name of docker stack: {{ skeleton_name }} |
+| HTTP_HOST            | The URL of application: {{ skeleton_url }}    |
+| DOCKER_UID           | The UID of php container (id -u)              |
+| AMQP_VHOST_URLENCODE | RabbitMq urlencode                            |
 
 ## Installation
 
@@ -53,21 +55,25 @@ This command does:
 - Install PHP vendor
 - Install or upgrade database
 
-Your application is reachable at `https://skeleton_url`
+Your application is reachable at `https://{{ skeleton_url }}`
 
 ## HTTP tools
 
-Adminer is reachable at `https://skeleton_url/adminer`
+Adminer is reachable at `https://{{ skeleton_url }}/adminer`
 
-RabbitMq admin management is reachable at `https://skeleton_url/rabbitmq`
+RabbitMq admin management is reachable at `https://{{ skeleton_url }}/rabbitmq`
 
 ## Makefile
 
 ### Application
 
-| Command      | Description                                    |
-|---           |---                                             |
-| make install | Install PHP vendor and upgrade database schema |
+| Command                 | Description                                        |
+|---                      |---                                                 |
+| make install            | Install PHP vendor                                 |
+| make check_requirements | Check application requirements                     |
+| make migrate            | Run all migrate commands                           |
+| make migrate_mysql      | Run MySql migration                                |
+| make migrate_rabbitmq   | Create and configure RabbitMq queues and exchanges |
 
 ### Docker
 

@@ -1,51 +1,94 @@
 version: '2.1'
-commands:
-    alpine_checkout:
-        description: Optimize Alpine checkout.
-        steps:
-            - run:
-                  name: Install alpine requirements
-                  command: apk add git openssh-client curl make
-            - checkout
+workflows:
+    version: '2.1'
+    tests:
+        jobs:
+            - phpcs
+            - phpstan
+            - phpunit
+            - security
 
 executors:
     php:
         docker:
             - image: php:7.4-cli-alpine
 
-jobs:
-    vendor:
-        executor: php
-        working_directory: ~/repo
+commands:
+    alpine_checkout:
+        description: Optimize Alpine checkout.
         steps:
-            - alpine_checkout
+            - run:
+                  name: Install alpine requirements
+                  command: apk add --update git openssh-client curl make
+            - checkout
+
+    php_requirements:
+        description: Install php requirements.
+        steps:
             - restore_cache:
-                  key: vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+                  name: Restoring PHP cache extension
+                  keys:
+                      - pecl-${PHP_VERSION}
+            - run:
+                  name: Install php extensions
+                  command: |
+                      mkdir -p pecl-cache
+                      php_extension_dir=$(php -i | grep -E '^extension_dir' | awk -F " " '{print $3}')
+                      cp -R pecl-cache/. ${php_extension_dir}/
+
+                      apk add --update ${PHPIZE_DEPS} rabbitmq-c-dev rabbitmq-c
+
+                      for extension in amqp redis pdo pdo_mysql; do
+                          if [ ! -f ${php_extension_dir}/${extension}.so ]; then
+                             case ${extension} in
+                                 amqp|redis)
+                                     pecl install -o ${extension}
+                                 ;;
+                                 *)
+                                     docker-php-ext-install -j$(nproc) ${extension}
+                             esac
+                          fi
+
+                          docker-php-ext-enable ${extension}
+                      done
+
+                      cp -R ${php_extension_dir}/.  pecl-cache
+            - save_cache:
+                  name: Saving PHP cache extension
+                  key: pecl-${PHP_VERSION}-${CIRCLE_BUILD_NUM}
+                  paths:
+                      - pecl-cache
+
+    vendor:
+        description: Install vendor.
+        steps:
+            - run:
+                  name: Install composer
+                  command: |
+                      curl -ls https://getcomposer.org/composer-stable.phar -o /usr/local/bin/composer
+                      chmod +x /usr/local/bin/composer
+            - restore_cache:
+                  name: Restoring composer cache
+                  keys:
+                      - vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+                      - vendor-
             - run:
                   name: composer
-                  command: |
-                      if [[ ! -f vendor/autoload.php ]]; then
-                          curl --location --silent https://getcomposer.org/composer.phar -o /usr/bin/composer; \
-                          chmod +x /usr/bin/composer; \
-                          composer global require hirak/prestissimo; \
-                          composer install --no-progress --no-interaction; \
-                      fi
+                  command: composer install --no-progress --no-interaction
             - save_cache:
+                  name: Saving composer cache
                   key: vendor-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
-                  paths:
-                      - vendor
-            - persist_to_workspace:
-                  root: .
                   paths:
                       - vendor
 
+jobs:
     phpcs:
         executor: php
         working_directory: ~/repo
         steps:
             - alpine_checkout
-            - attach_workspace:
-                  at: .
+            - php_requirements
+            - vendor
             - run:
                   name: phpcs
                   command: make phpcs
@@ -55,8 +98,8 @@ jobs:
         working_directory: ~/repo
         steps:
             - alpine_checkout
-            - attach_workspace:
-                  at: .
+            - php_requirements
+            - vendor
             - run:
                   name: phpstan
                   command: make phpstan
@@ -66,8 +109,8 @@ jobs:
         working_directory: ~/repo
         steps:
             - alpine_checkout
-            - attach_workspace:
-                  at: .
+            - php_requirements
+            - vendor
             - run:
                   name: phpunit
                   command: make phpunit options="--log-junit ~/phpunit/junit.xml --coverage-html ~/coverage-html"
@@ -80,17 +123,16 @@ jobs:
             - store_test_results:
                   path: ~/phpunit
 
-workflows:
-    version: '2.1'
-    tests:
-        jobs:
-            - vendor
-            - phpcs:
-                  requires:
-                      - vendor
-            - phpstan:
-                  requires:
-                      - vendor
-            - phpunit:
-                  requires:
-                      - vendor
+    security:
+        executor: php
+        working_directory: ~/repo
+        steps:
+            - alpine_checkout
+            - run:
+                  name: Install SensioLabs Security Checker
+                  command: |
+                      curl -ls https://get.sensiolabs.org/security-checker.phar -o /usr/local/bin/security-checker
+                      chmod +x /usr/local/bin/security-checker
+            - run:
+                  name: Checks dependencies security vulnerabilities
+                  command: security-checker security:check composer.lock

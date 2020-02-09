@@ -25,8 +25,10 @@ Options
 
 | Name                     | Description                                          | Default Value     |
 |---                       |---                                                   |---                |
-| url                      | Define the project URL.                              |                   |
+| url                      | Define the project URL.                              | project name      |
 | directory                | Define the directory to create project. see example. | current directory |
+| organization             | Define the composer organization.                    | project name      |
+| fix-files-owner          | Fix Files owner.                                     | false             |
 | delete-project-directory | Delete the project directory if exist.               | false             |
 | no-initialize-git        | Do not initialize GIT repository.                    | true              |
 | fix-files-owner          | Fix Files owner.                                     | false             |

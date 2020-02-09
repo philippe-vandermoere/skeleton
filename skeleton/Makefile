@@ -4,26 +4,62 @@ endif
 
 default:
 
-phpcs:
+####################### GIT #######################
+git_hooks:
+	@git config core.hooksPath .githooks
+
+####################### Tests #######################
+tests: phpcs phpstan phpunit security
+
+phpcs: check_requirements
 	vendor/bin/phpcs
 
-phpstan:
+phpstan: check_requirements
 	APP_ENV=test bin/console cache:clear
 	vendor/bin/phpstan analyse
 
-phpunit:
+phpunit: check_requirements
+ifeq (, $(shell which phpdbg))
+	$(error "You must install phpdbg")
+endif
 	phpdbg -qrr vendor/bin/phpunit $(options)
 
-tests: phpcs phpstan phpunit
+security:
+ifeq (, $(shell which security-checker))
+	$(error "You must install security-checker (https://github.com/sensiolabs/security-checker)")
+endif
+	security-checker security:check composer.lock
 
-install:
+####################### Application #######################
+check_requirements: git_hooks
+ifeq (, $(shell which composer))
+	$(error "You must install composer (https://getcomposer.org/download/)")
+endif
+	@composer check-platform-reqs --no-interaction --quiet || composer check-platform-reqs --no-interaction --ansi
+
+install: check_requirements
 	composer install --no-interaction --no-progress --ansi
-	bin/console doctrine:database:create --no-interaction --if-not-exists
+
+migrate: migrate_mysql migrate_rabbitmq
+
+migrate_mysql:
 	bin/console doctrine:migrations:migrate --no-interaction --query-time --allow-no-migration
 
-.out_docker:
+migrate_rabbitmq:
+	bin/console messenger:setup-transports
+
+####################### Docker #######################
+ifndef php-fpm
+override php-fpm = 2
+endif
+
+ifndef php-messenger-consumer
+override php-messenger-consumer = 3
+endif
+
+.out_docker: git_hooks
 ifeq (, $(shell which docker))
-	$(error "You must run this command outside the docker container. ")
+	$(error "You must run this command outside the docker container")
 endif
 
 configure: .out_docker
@@ -37,15 +73,8 @@ start: .out_docker configure
 	@make .up php-fpm=0 php-messenger-consumer=0
 	@cd docker/dev && docker-compose run --rm php-fpm make .waiting_for_dependency
 	@cd docker/dev && docker-compose run --rm php-fpm make install
+	@cd docker/dev && docker-compose run --rm php-fpm make migrate
 	@make .up
-
-ifndef php-fpm
-override php-fpm = 2
-endif
-
-ifndef php-messenger-consumer
-override php-messenger-consumer = 3
-endif
 
 .up: .out_docker
 	@cd docker/dev && docker-compose up \
@@ -77,7 +106,8 @@ restart: stop start
 ps: .out_docker
 	@cd docker/dev && docker-compose ps
 
-shell: .out_docker
+####################### Docker CLI #######################
+shell: .out_docker configure
 	@cd docker/dev && docker-compose run --rm php-fpm /bin/bash
 
 mysql_cli: .out_docker
@@ -86,6 +116,7 @@ mysql_cli: .out_docker
 redis_cli: .out_docker
 	@cd docker/dev && docker-compose exec redis redis-cli
 
+####################### Docker logs #######################
 logs: .out_docker
 	@cd docker/dev && docker-compose logs --timestamps --follow --tail=50 $(service)
 
