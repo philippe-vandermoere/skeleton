@@ -7,7 +7,8 @@
         "symfony/console": "^5.0",
         "symfony/finder": "^5.0",
         "symfony/process": "^5.0",
-        "symfony/filesystem": "^5.0"
+        "symfony/filesystem": "^5.0",
+        "psr/log": "^1.1"
     },
     "autoload": {
         "psr-4": {

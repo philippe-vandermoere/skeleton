@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+
+# This hook is called by git-push and can be used to prevent a push from taking place.
+# This hook is called with the following parameters:
+# $1 -- Name of the remote to which the push is being done
+# $2 -- URL to which the push is being done
+
+set -e
+
+readonly REMOTE_NAME=$1
+readonly REMOTE_URL=$2
+
+readonly BRANCH_REGEX='^(master|develop|(release\/[0-9]+.[0-9]+.[0-9]+)|(fix|hotfix|feature)\/[a-zA-Z0-9_-]{5,100})$'
+
+readonly RESET='\033[0;0m'
+readonly RED='\033[0;31m'
+
+# check branch name
+if [[ $(echo $(git symbolic-ref HEAD --short) | LC_CTYPE=C grep -E "${BRANCH_REGEX}" -c) -eq 0 ]]; then
+    echo -e "${RED}The branch name must respect the regex '${BRANCH_REGEX}'.${RESET}"
+    exit 1
+fi
+
+make phpcs

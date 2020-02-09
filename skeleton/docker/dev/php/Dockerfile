@@ -21,7 +21,7 @@ RUN set -xe; \
         make \
     ;
 
-# Install php extension
+# Install php extensions
 RUN set -xe; \
     apk add --update --no-cache --virtual .build-deps \
         ${PHPIZE_DEPS} \
@@ -39,10 +39,12 @@ RUN set -xe; \
         $(scanelf --needed --nobanner --format '%n#p' --recursive /usr/local | tr ',' '\n' | sort -u | awk '{ print "so:" $1 }') \
     ;
 
-# Install composer
+# Install composer + sensiolabs security checker
 RUN set -xe; \
     curl -sl https://getcomposer.org/composer-stable.phar -o /usr/local/bin/composer; \
-    chmod +x /usr/local/bin/composer;
+    chmod +x /usr/local/bin/composer; \
+    curl -ls https://get.sensiolabs.org/security-checker.phar -o /usr/local/bin/security-checker; \
+    chmod +x /usr/local/bin/security-checker;
 
 ARG DOCKER_UID
 

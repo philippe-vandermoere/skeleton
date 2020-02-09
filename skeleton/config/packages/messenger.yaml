@@ -12,7 +12,7 @@ framework:
                         name: common
                         type: topic
                     queues:
-                        skeleton_name:
+                      {{ skeleton_name }}:
                             binding_keys:
                                 - event.broadcast
 

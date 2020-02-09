@@ -1,12 +1,18 @@
 {
+    "name": "{{ skeleton_repository }}",
+    "description": "{{ skeleton_description }}",
     "type": "project",
+    "license": "proprietary",
     "minimum-stability": "stable",
     "require": {
         "php": "^7.4",
-        "ext-curl": "*",
+        "ext-amqp": "*",
         "ext-ctype": "*",
+        "ext-curl": "*",
         "ext-iconv": "*",
         "ext-json": "*",
+        "ext-pdo_mysql": "*",
+        "ext-redis": "*",
         "symfony/flex": "^1.6"
     },
     "require-dev": {},

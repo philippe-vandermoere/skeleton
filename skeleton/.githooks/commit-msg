@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+# This hook is invoked by git-commit and git-merge, and can be bypassed with the --no-verify option.
+# It takes a single parameter, the name of the file that holds the proposed commit log message.
+
+set -e
+
+readonly COMMIT_MESSAGE_FILE=$1
+
+readonly RESET='\033[0;0m'
+readonly RED='\033[0;31m'
