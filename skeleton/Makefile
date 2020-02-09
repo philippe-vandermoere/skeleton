@@ -58,6 +58,8 @@ override php-messenger-consumer = 3
 endif
 
 .out_docker: git_hooks
+# @todo check docker version
+# @todo check docker-compose version
 ifeq (, $(shell which docker))
 	$(error "You must run this command outside the docker container")
 endif
