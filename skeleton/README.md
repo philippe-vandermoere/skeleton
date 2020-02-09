@@ -97,12 +97,19 @@ RabbitMq admin management is reachable at `https://{{ skeleton_url }}/rabbitmq`
 
 ### Tests
 
-| Command      | Description                |
-|---           |---                         |
-| make phpcs   | Run PHP Code Sniffer tests |
-| make phpunit | Run PHP Unit tests         |
-| make phpstan | Run PHP Stan tests         |
-| make tests   | Run all tests commands     |
+| Command       | Description                         |
+|---            |---                                  |
+| make tests    | Run all tests commands              |
+| make phpcs    | Run PHP Code Sniffer tests          |
+| make phpstan  | Run PHP Stan tests                  |
+| make phpunit  | Run PHP Unit tests                  |
+| make security | Run PHP Sensiolabs security checker |
+
+### Git
+
+| Command        | Description                                  |
+|---             |---                                           |
+| make git_hooks | Use the Git Hooks from directory `.githooks` |
 
 ### logs
 
