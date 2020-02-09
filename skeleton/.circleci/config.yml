@@ -25,10 +25,16 @@ commands:
     php_requirements:
         description: Install php requirements.
         steps:
+            - run:
+                  name: Create PHP cache extension key
+                  command: |
+                      echo ${PHP_VERSION} > .circleci/php_version.txt
+                      echo 'amqp redis pdo pdo_mysql' > .circleci/php_extensions.txt
             - restore_cache:
                   name: Restoring PHP cache extension
                   keys:
-                      - pecl-${PHP_VERSION}
+                      - pecl-{{ checksum ".circleci/php_version.txt" }}-{{ checksum ".circleci/php_extensions.txt" }}
+                      - pecl-{{ checksum ".circleci/php_version.txt" }}-
             - run:
                   name: Install php extensions
                   command: |
@@ -38,7 +44,7 @@ commands:
 
                       apk add --update ${PHPIZE_DEPS} rabbitmq-c-dev rabbitmq-c
 
-                      for extension in amqp redis pdo pdo_mysql; do
+                      for extension in $(cat .circleci/php_extensions.txt); do
                           if [ ! -f ${php_extension_dir}/${extension}.so ]; then
                              case ${extension} in
                                  amqp|redis)
@@ -55,7 +61,7 @@ commands:
                       cp -R ${php_extension_dir}/.  pecl-cache
             - save_cache:
                   name: Saving PHP cache extension
-                  key: pecl-${PHP_VERSION}-${CIRCLE_BUILD_NUM}
+                  key: pecl-{{ checksum ".circleci/php_version.txt" }}-{{ checksum ".circleci/php_extensions.txt" }}
                   paths:
                       - pecl-cache
 
